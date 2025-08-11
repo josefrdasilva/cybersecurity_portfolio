@@ -5,6 +5,7 @@ import sys
 import requests
 from colorama import Fore, Style, init
 
+# Inicializa o colorama para que as cores funcionem em diferentes terminais
 init(autoreset=True)
 
 def get_network_prefix():
@@ -71,11 +72,12 @@ def print_results(devices_list):
     print("="*80 + "\n")
 
 def scan_ports(ip_address):
-    """Escaneia as portas mais comuns de um IP."""
+    """Escaneia as portas mais comuns de um IP com detecção de versão e scripts padrão."""
     nm = nmap.PortScanner()
     try:
-        print(f"{Fore.CYAN}Iniciando escaneamento de portas para {ip_address}...{Style.RESET_ALL}")
-        nm.scan(ip_address, '1-1024')
+        print(f"{Fore.CYAN}Iniciando escaneamento de portas para {ip_address} com detecção de versão e scripts...{Style.RESET_ALL}")
+        
+        nm.scan(ip_address, '1-1024', arguments='-sV -sC')
         
         if ip_address in nm.all_hosts():
             host = nm[ip_address]
@@ -87,7 +89,12 @@ def scan_ports(ip_address):
                     for port in sorted_ports:
                         state = host[proto][port]['state']
                         name = host[proto][port]['name']
-                        print(f"  {Fore.GREEN}Porta {port}/{proto} - Estado: {state} - Serviço: {name}")
+                        version = host[proto][port]['version']
+                        product = host[proto][port]['product']
+                        print(f"  {Fore.GREEN}Porta {port}/{proto} - Estado: {state} - Serviço: {name} - Versão: {product} {version}")
+                        if 'script' in host[proto][port]:
+                            for script_output in host[proto][port]['script'].items():
+                                print(f"  {Fore.CYAN}    Script Info: {script_output[0]} -> {script_output[1]}")
             print("\n")
         else:
             print(f"{Fore.YELLOW}Não foi possível escanear portas para {ip_address}.")
